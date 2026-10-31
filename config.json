@@ -1,0 +1,22 @@
+{
+  "title": {
+    "file": "./txt/title.txt",
+    "width": 510,
+    "font": "",
+    "fontFile": "",
+    "fontWeight": "",
+    "fontsize": 32,
+    "color": "black",
+    "paddingLeft": 0
+  },
+  "artistAlbum": {
+    "file": "./txt/Artist_Album.txt",
+    "width": 510,
+    "font": "",
+    "fontFile": "",
+    "fontWeight": "700",
+    "fontsize": 26,
+    "color": "black",
+    "paddingLeft": "2px"
+  }
+}

@@ -1,0 +1,58 @@
+#container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-sizing: border-box;
+}
+
+#title,
+#artistAlbum {
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+
+#title {
+  width: var(--title-width, 510px);
+  color: var(--title-color, black);
+  font-size: var(--title-fontSize, 32px);
+  padding-left: var(--title-paddingLeft, 0);
+}
+
+#artistAlbum {
+  width: var(--artistAlbum-width, 510px);
+  color: var(--artistAlbum-color, black);
+  font-size: var(--artistAlbum-fontSize, 26px);
+  padding-left: var(--artistAlbum-paddingLeft, 2px);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  white-space: nowrap;
+  will-change: transform;
+  animation: marquee 15s linear infinite;
+}
+
+.marquee-track span {
+  display: block;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding-right: 60px;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  /* 開始位置で5秒間待機 */
+  33.333% {
+    transform: translateX(0);
+  }
+
+  /* 残りの時間でスクロール */
+  100% {
+    transform: translateX(-50%);
+  }
+}

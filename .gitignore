@@ -1,5 +1,2 @@
-#fontは各自で用意するため不要
-fonts/
-
 #動作確認用
 config.local.json

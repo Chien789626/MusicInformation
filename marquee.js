@@ -77,58 +77,64 @@ async function loadFonts(config) {
 }
 
 async function loadConfig() {
-  try {
-    let response = await fetch('./config.local.json');
+  let config;
 
-    // local設定が存在しない場合は通常設定を読み込む
-    if (!response.ok) {
-      response = await fetch('./config.json');
+  // local設定 → 通常設定の順番で読み込む
+  for (const path of ['./config.local.json', './config.json']) {
+    try {
+      const response = await fetch(path);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      config = await response.json();
+
+      console.log(`設定ファイル読み込み成功: ${path}`);
+      break;
+    } catch (error) {
+      console.warn(`${path} の読み込みに失敗しました:`, error);
     }
-
-    if (!response.ok) {
-      throw new Error(`設定ファイルの読み込みに失敗: ${response.status}`);
-    }
-
-    const config = await response.json();
-
-    for (const [key, settings] of Object.entries(config)) {
-      const element = document.getElementById(key);
-
-      if (!element) continue;
-
-      if (Number.isFinite(settings.width) && settings.width > 0) {
-        element.style.width = `${settings.width}px`;
-      }
-
-      if (settings.font) {
-        element.style.fontFamily = `"${settings.font || 'sans-serif'}", sans-serif`;
-      }
-
-      if (settings.fontWeight) {
-        element.style.fontWeight = settings.fontWeight;
-      }
-
-      if (settings.fontsize) {
-        element.style.fontSize = `${settings.fontsize}px`;
-      }
-
-      if (settings.color) {
-        element.style.color = settings.color;
-      }
-
-      if (settings.paddingLeft !== undefined) {
-        element.style.paddingLeft =
-          typeof settings.paddingLeft === 'number'
-            ? `${settings.paddingLeft}px`
-            : settings.paddingLeft;
-      }
-    }
-
-    return config;
-  } catch (error) {
-    console.error('設定読み込みエラー:', error);
-    throw error;
   }
+
+  if (!config) {
+    throw new Error('設定ファイルを読み込めませんでした');
+  }
+
+  // CSS設定を適用
+  for (const [key, settings] of Object.entries(config)) {
+    const element = document.getElementById(key);
+    if (!element) continue;
+
+    if (Number.isFinite(settings.width) && settings.width > 0) {
+      element.style.width = `${settings.width}px`;
+    }
+
+    if (settings.font) {
+      element.style.fontFamily = `"${settings.font || 'sans-serif'}", sans-serif`;
+    }
+
+    if (settings.fontWeight) {
+      element.style.fontWeight = settings.fontWeight;
+    }
+
+    if (settings.fontsize) {
+      element.style.fontSize = `${settings.fontsize}px`;
+    }
+
+    if (settings.color) {
+      element.style.color = settings.color;
+    }
+
+    if (settings.paddingLeft !== undefined) {
+      element.style.paddingLeft =
+        typeof settings.paddingLeft === 'number'
+          ? `${settings.paddingLeft}px`
+          : settings.paddingLeft;
+    }
+  }
+
+  return config;
 }
 
 async function loadTextFile(config) {

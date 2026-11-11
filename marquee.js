@@ -1,3 +1,66 @@
+function applyMarqueeSettings(config) {
+  const settings = config.marquee || {};
+
+  // config.json の時間設定は「秒」単位
+  const totalSeconds = Number(settings.totalDuration) > 0
+    ? Number(settings.totalDuration)
+    : 15;
+  const waitSeconds = Number(settings.waitDuration) >= 0
+    ? Number(settings.waitDuration)
+    : 5;
+  const scrollSeconds = Number(settings.scrollDuration) > 0
+    ? Number(settings.scrollDuration)
+    : totalSeconds - waitSeconds;
+
+  // CSSアニメーション用にミリ秒へ変換
+  const totalDuration = totalSeconds * 1000;
+  const waitDuration = waitSeconds * 1000;
+  const scrollDuration = scrollSeconds * 1000;
+
+  if (Math.abs(waitDuration + scrollDuration - totalDuration) > 0.001) {
+    console.warn(
+      'marquee: totalDuration は waitDuration + scrollDuration と一致させてください'
+    );
+  }
+
+  // 待機時間の割合から、スクロール開始位置を算出
+  const waitPercent = Math.min(
+    100,
+    Math.max(0, (waitDuration / totalDuration) * 100)
+  );
+
+  let keyframes = document.getElementById('marquee-keyframes');
+  if (!keyframes) {
+    keyframes = document.createElement('style');
+    keyframes.id = 'marquee-keyframes';
+    document.head.appendChild(keyframes);
+  }
+
+  keyframes.textContent = `
+    @keyframes marquee {
+      0%, ${waitPercent}% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(-50%);
+      }
+    }
+  `;
+
+  document.documentElement.style.setProperty(
+    '--marquee-total-duration',
+    `${totalDuration}ms`
+  );
+}
+
+function applyDebugSettings(config) {
+  // true / false の真偽値と "True" / "False" などの文字列に対応
+  const debugValue = String(config.debug).trim().toLowerCase();
+  const isDebugEnabled = debugValue === 'true';
+
+  document.body.classList.toggle('debug-mode', isDebugEnabled);
+}
+
 function setMarquee(element, text) {
   const value = text.trim() || '';
 
@@ -23,17 +86,6 @@ function setMarquee(element, text) {
   // 表示領域の幅を取得
   const containerWidth = element.clientWidth;
 
-  // console.log({
-  //   element: element.id,
-  //   containerWidth: element.clientWidth,
-  //   actualWidth: element.getBoundingClientRect().width,
-  //   textWidth,
-  //   trackAnimation: getComputedStyle(track).animation,
-  //   trackTransform: getComputedStyle(track).transform,
-  //   parentOverflow: getComputedStyle(element).overflow,
-  //   needsScroll: textWidth > containerWidth + 2,
-  // });
-
   // わずかな小数点誤差を考慮して判定
   if (textWidth > containerWidth + 2) {
     const second = document.createElement('span');
@@ -50,9 +102,11 @@ function setMarquee(element, text) {
 }
 
 async function loadFonts(config) {
-  for (const [key, settings] of Object.entries(config)) {
+  for (const key of ['title', 'artistAlbum']) {
+    const settings = config[key];
+    if (!settings) continue;
+
     if (!settings.fontFile || !settings.fontFile.trim()) {
-      console.warn(`${key}: フォントファイルが未指定です`);
       continue;
     }
 
@@ -63,8 +117,11 @@ async function loadFonts(config) {
 
     try {
       const weight = settings.fontWeight?.trim() || '400';
-
-      const face = new FontFace(settings.font, `url("${settings.fontFile}")`, { weight });
+      const face = new FontFace(
+        settings.font,
+        `url("${settings.fontFile}")`,
+        { weight }
+      );
 
       await face.load();
       document.fonts.add(face);
@@ -72,6 +129,7 @@ async function loadFonts(config) {
       console.error(`${key}: フォント読み込み失敗`, error);
     }
   }
+
   // フォントの読み込み完了を待つ
   await document.fonts.ready;
 }
@@ -89,7 +147,6 @@ async function loadConfig() {
       }
 
       config = await response.json();
-
       console.log(`設定ファイル読み込み成功: ${path}`);
       break;
     } catch (error) {
@@ -101,17 +158,23 @@ async function loadConfig() {
     throw new Error('設定ファイルを読み込めませんでした');
   }
 
-  // CSS設定を適用
-  for (const [key, settings] of Object.entries(config)) {
+  // マーキーとデバッグ設定を適用
+  applyMarqueeSettings(config);
+  applyDebugSettings(config);
+
+  // title / artistAlbum のCSS設定を適用
+  for (const key of ['title', 'artistAlbum']) {
+    const settings = config[key];
     const element = document.getElementById(key);
-    if (!element) continue;
+
+    if (!settings || !element) continue;
 
     if (Number.isFinite(settings.width) && settings.width > 0) {
       element.style.width = `${settings.width}px`;
     }
 
     if (settings.font) {
-      element.style.fontFamily = `"${settings.font || 'sans-serif'}", sans-serif`;
+      element.style.fontFamily = `"${settings.font}", sans-serif`;
     }
 
     if (settings.fontWeight) {
@@ -144,7 +207,6 @@ async function loadTextFile(config) {
 
     // title.txt の読み込み
     const res = await fetch(config.title.file);
-
     if (!res.ok) {
       throw new Error(`titleファイルの取得に失敗: ${res.status}`);
     }
@@ -153,7 +215,6 @@ async function loadTextFile(config) {
 
     // Artist_Album.txt の読み込み
     const res1 = await fetch(config.artistAlbum.file);
-
     if (!res1.ok) {
       throw new Error(`artistAlbumファイルの取得に失敗: ${res1.status}`);
     }
@@ -171,10 +232,10 @@ async function loadTextFile(config) {
 async function initialize() {
   const config = await loadConfig();
 
-  //フォント読込
+  // フォント読込
   await loadFonts(config);
 
-  //テキスト読込
+  // テキスト読込
   await loadTextFile(config);
 
   // 1秒ごと（1000ミリ秒）に自動更新

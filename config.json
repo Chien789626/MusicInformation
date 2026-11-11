@@ -1,4 +1,10 @@
 {
+  "debug": "False",
+  "marquee": {
+    "totalDuration": 15,
+    "waitDuration": 5,
+    "scrollDuration": 10
+  },
   "title": {
     "file": "./txt/Title.txt",
     "width": 510,

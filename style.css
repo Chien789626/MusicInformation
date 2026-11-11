@@ -32,7 +32,7 @@
   width: max-content;
   white-space: nowrap;
   will-change: transform;
-  animation: marquee 15s linear infinite;
+  animation: marquee var(--marquee-total-duration, 15s) linear infinite;
 }
 
 .marquee-track span {
@@ -42,17 +42,31 @@
   padding-right: 60px;
 }
 
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  /* 開始位置で5秒間待機 */
-  33.333% {
-    transform: translateX(0);
-  }
+/*
+ * デバッグモード
+ * 表示領域の左端（開始位置）と右端（終了位置）を表示する
+ */
+body.debug-mode #title::before,
+body.debug-mode #artistAlbum::before,
+body.debug-mode #title::after,
+body.debug-mode #artistAlbum::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  z-index: 10;
+  pointer-events: none;
+}
 
-  /* 残りの時間でスクロール */
-  100% {
-    transform: translateX(-50%);
-  }
+body.debug-mode #title::before,
+body.debug-mode #artistAlbum::before {
+  left: 0;
+  background: #00e676;
+}
+
+body.debug-mode #title::after,
+body.debug-mode #artistAlbum::after {
+  right: 0;
+  background: #ff1744;
 }
